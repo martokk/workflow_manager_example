@@ -4,7 +4,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [workflow_manager]
-app_name = "WorkflowManagerExampleAppTOML"
+app_name = "Workflow Manager Example"
 statusbar_text = "App designed by v3services"
 about_text = "App designed by v3services."
 pos_x = 0
@@ -14,7 +14,7 @@ width = 800
 
 [tool.poetry]
 name = "workflow_manager_example"
-version = "0.0.1"
+version = "0.1.0"
 description = "An example application using the `workflow_manager` framework. "
 readme = "README.md"
 authors = ["v3services <25113632+martokk@users.noreply.github.com>"]
