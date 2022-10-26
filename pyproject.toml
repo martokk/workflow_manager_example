@@ -3,15 +3,6 @@
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[workflow_manager]
-app_name = "Workflow Manager Example"
-statusbar_text = "App designed by v3services"
-about_text = "App designed by v3services."
-pos_x = 0
-pos_y = 0
-height = 1200
-width = 800
-
 [tool.poetry]
 name = "workflow_manager_example"
 version = "0.1.0"
@@ -97,6 +88,8 @@ profile = "black"
 multi_line_output = 3
 indent = 4
 color_output = true
+skip = ["pyqt5_ui.py", "resources_rc.py"]
+skip_glob = [".venv/*"]
 
 [tool.mypy]
 # https://mypy.readthedocs.io/en/latest/config_file.html#using-a-pyproject-toml-file
@@ -122,6 +115,7 @@ warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
+exclude = "typings"
 
 [[tool.mypy.overrides]]
 module = "*.pyqt5_ui"

@@ -13,6 +13,16 @@ from workflow_manager_example.pyqt5_ui import Ui_MainWindow
 
 logger.add("log.log", level="TRACE", rotation="50 MB")
 
+CONFIG = Config(
+    app_name="WorkflowManagerExampleApp",
+    statusbar_text="App designed by v3services",
+    about_text="App designed by v3services.",
+    pos_x=0,
+    pos_y=0,
+    height=1200,
+    width=800,
+)
+
 
 class ExampleActionScript(ActionScript):
     def script(self, **kwargs: object) -> str:
@@ -24,7 +34,7 @@ class ExampleActionScript(ActionScript):
 class ExampleWorkflowManager(WorkflowManager):
     def __init__(self) -> None:
         self.ui = Ui_MainWindow()  # type: ignore # Imports QtDesigner UI
-        self.config = import_pyproject_config(pyproject_file="pyproject.toml")
+        self.config: Config = CONFIG
         super().__init__()
 
     # Line 1 Callbacks
