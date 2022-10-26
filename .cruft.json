@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/martokk/cookiecutter_python",
-  "commit": "6824f02670e7da6e50c3de13c113824f936006a8",
+  "commit": "bbf8589e9639817c91ce909be8f90ee2170ccc6c",
   "checkout": null,
   "context": {
     "cookiecutter": {

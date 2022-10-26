@@ -11,7 +11,7 @@ VERSION := latest
 
 
 #-----------------------------------------------------------------------------------------
-# INSTALLATION
+# DEV INSTALLATION
 #-----------------------------------------------------------------------------------------
 .PHONY: install-poetry
 install-poetry: ## Download and install Poetry
@@ -24,11 +24,11 @@ uninstall-poetry: ## Uninstall Poetry
 .PHONY: install-pyinstaller
 install-pyinstaller: ## Download and install PyInstaller
 	poetry run sudo apt install libpython3.10-dev -y
-	poetry add pyinstaller@latest pillow@latest
+	poetry add --group dev pyinstaller@latest pillow@latest
 
 .PHONY: remove-pyinstaller
 remove-pyinstaller: ## Uninstall PyInstaller
-	poetry add pyinstaller@latest pillow@latest
+	poetry remove --group dev pyinstaller@latest pillow@latest
 
 .PHONY: install-pre-commit-hooks
 install-pre-commit-hooks: ## Install Pre-Commit Git Hooks
@@ -50,8 +50,8 @@ install: ## Install Project Dependecies/Requirements from Poetry
 
 .PHONY: update-dev-deps
 update-dev-deps: ## Update dev dependecies to @latest version
-	poetry add -D bandit@latest darglint@latest "isort[colors]@latest" mypy@latest pre-commit@latest pydocstyle@latest pylint@latest pytest@latest pyupgrade@latest safety@latest coverage@latest coverage-badge@latest pytest-html@latest pytest-cov@latest
-	poetry add -D --allow-prereleases black@latest
+	poetry add --group dev  bandit@latest darglint@latest "isort[colors]@latest" mypy@latest pre-commit@latest pydocstyle@latest pylint@latest pytest@latest pyupgrade@latest safety@latest coverage@latest coverage-badge@latest pytest-html@latest pytest-cov@latest
+	poetry add --group dev  --allow-prereleases black@latest
 
 #-----------------------------------------------------------------------------------------
 # ORIGINAL INSTALLATION HOOKS
@@ -81,13 +81,13 @@ codestyle: ## Apply Formatting via PyUpgrade, ISort, Black.
 check-codestyle: ## Check Formatting via ISort, Black, darglint.
 	poetry run isort --diff --check-only --settings-path pyproject.toml ./
 	poetry run black --diff --check --config pyproject.toml ./
-	poetry run darglint --verbosity 2 workflow_manager_example tests
+	poetry run darglint --verbosity 2 $(IMAGE) tests
 
 .PHONY: check-safety
 check-safety: ## Check Securty & Safty via Bandit, Safety.
 	poetry check
 	poetry run safety check --full-report
-	poetry run bandit -ll --recursive workflow_manager_example tests
+	poetry run bandit -ll --recursive $(IMAGE) tests
 
 .PHONY: mypy
 mypy: ## Typechecking via MyPy
@@ -102,27 +102,32 @@ tests: test ## Run Tests & Coverage
 
 .PHONY: test
 test: ## Run Tests & Coverage
-	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov-report=html --cov=workflow_manager_example tests/
+	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov-report=html --cov=$(IMAGE) tests/
 	poetry run coverage-badge -o assets/images/coverage.svg -f
 
 
 #-----------------------------------------------------------------------------------------
-# BUILDS
+# BUILD PACKAGE
 #-----------------------------------------------------------------------------------------
 .PHONY: build-package
 build-package: ## Build as Package
 	poetry build
 
+
+#-----------------------------------------------------------------------------------------
+# BUILD EXECUTABLE
+#-----------------------------------------------------------------------------------------
 .PHONY: build-pyinstaller-linux
 build-pyinstaller-linux: ## Build Linux Executable
 	pyinstaller $(IMAGE)/__main__.py \
 		--clean \
 		--onefile \
 		--windowed \
-		--paths=./$(IMAGE) \
-		--icon=./assets/images/icon.png \
-		--workpath=./build_linux \
-		--distpath=./dist_linux
+		--paths=$(PYTHONPATH)/$(IMAGE) \
+		--icon=$(PYTHONPATH)/assets/images/icon.png \
+		--workpath=$(PYTHONPATH)/build_linux \
+		--distpath=$(PYTHONPATH)/dist_linux \
+		--name=$(IMAGE)
 
 .PHONY: build-pyinstaller-win
 build-pyinstaller-win: ## Build Windows Executable
@@ -130,12 +135,16 @@ build-pyinstaller-win: ## Build Windows Executable
 		--clean \
 		--onefile \
 		--windowed \
-		--paths=./$(IMAGE) \
-		--icon=./assets/images/icon.png \
-		--workpath=./build_win \
-		--distpath=./dist_win
+		--paths=$(PYTHONPATH)/$(IMAGE) \
+		--icon=$(PYTHONPATH)/assets/images/icon.png \
+		--workpath=$(PYTHONPATH)/build_win \
+		--distpath=$(PYTHONPATH)/dist_win \
+		--name=$(IMAGE)
 
 
+#-----------------------------------------------------------------------------------------
+# BUILD RESOURCES
+#-----------------------------------------------------------------------------------------
 .PHONY: build-pyqt5-resources
 build-pyqt5-resources: ## Build PyQt5 Resources File
 	pyrcc5 $(PYTHONPATH)/assets/ui/resources.qrc -o $(PYTHONPATH)/$(IMAGE)/resources_rc.py
@@ -146,21 +155,35 @@ build-pyqt5-ui: ## Build PyQt5 QtDesigner UI File
 
 .PHONY: build-desktop-file
 build-desktop-file: ## Build .desktop File
-	echo "[Desktop Entry]\n"\
-		"Name=workflow_manager_example\n"\
-		"Icon=$(PYTHONPATH)/$(IMAGE)/resources/images/icon.png\n"\
-		"Type=Application\n"\
-		"Exec=$(PYTHONPATH)/dist_linux/$(IMAGE)\n"\
-		"Terminal=false" > "$(PYTHONPATH)/dist_linux/$(IMAGE).desktop"
+	printf "[Desktop Entry]\nName=quick_capture\nIcon=$(PYTHONPATH)/assets/images/icon.png\nType=Application\nExec=$(PYTHONPATH)/dist_linux/$(IMAGE)\nTerminal=false" > "$(PYTHONPATH)/dist_linux/$(IMAGE).desktop"
+
+
+
+#-----------------------------------------------------------------------------------------
+# INSTALL EXECUTABLE, SHORTCUTS, RESOURCES
+#-----------------------------------------------------------------------------------------
+.PHONY: install-linux
+install-linux: install-linux-executable install-linux-user-config  install-desktop-file ## Full Installl of Executable, User Config(won't overwrite), Desktop File
+	echo "Completed Install."
+
+.PHONY: install-linux-executable
+install-linux-executable: ## Installs binary in ~/bin
+	mkdir -p $(HOME)/bin
+	ln -sfv $(PYTHONPATH)/dist_linux/$(IMAGE) /home/${USER}/bin/$(IMAGE)
+
+.PHONY: install-linux-user-config
+install-linux-user-config: ## Installs config in ~/.vapps
+	test -f $(PYTHONPATH)/$(IMAGE)/.vapps/$(IMAGE).yaml && mkdir -p $(HOME)/.vapps || echo ""
+	test -f $(PYTHONPATH)/$(IMAGE)/.vapps/$(IMAGE).yaml && cp -n $(PYTHONPATH)/$(IMAGE)/.vapps/$(IMAGE).yaml $(HOME)/.vapps/$(IMAGE).yaml || echo ""
 
 .PHONY: install-desktop-file
-install-desktop-file: ## Install .desktop shortcut for user
-	desktop-file-install --dir=~/.local/share/applications "$(PYTHONPATH)/dist_linux/$(IMAGE).desktop"
-	update-desktop-database ~/.local/share/applications
+install-desktop-file: build-desktop-file ## Install .desktop shortcut for user
+	desktop-file-install --dir=$(HOME)/.local/share/applications "$(PYTHONPATH)/dist_linux/$(IMAGE).desktop"
+	update-desktop-database $(HOME)/.local/share/applications
 
 .PHONY: update-desktop-database
 update-desktop-database: ## Updates Linux database of .desktop shortcuts
-	update-desktop-database ~/.local/share/applications
+	update-desktop-database $(HOME)/.local/share/applications
 
 
 #-----------------------------------------------------------------------------------------
@@ -192,6 +215,10 @@ cleanup: pycache-remove dsstore-remove mypycache-remove ipynbcheckpoints-remove 
 .PHONY: pycache-remove
 pycache-remove: ## Clean PyCache
 	find . | grep -E "(__pycache__|\.pyc|\.pyo$$)" | xargs rm -rf
+	find . -name '*.pyc' -exec rm -f {} +
+	find . -name '*.pyo' -exec rm -f {} +
+	find . -name '*~' -exec rm -f {} +
+	find . -name '__pycache__' -exec rm -fr {} +
 
 .PHONY: dsstore-remove
 dsstore-remove: ## Clean .DS_Store
@@ -214,7 +241,9 @@ build-remove: ## Clean Builds
 	rm -rf build/
 	rm -rf build_linux/
 	rm -rf build_win/
-
+	rm -fr .eggs/
+	find . -name '*.egg-info' -exec rm -fr {} +
+	find . -name '*.egg' -exec rm -f {} +
 
 #-----------------------------------------------------------------------------------------
 # HELP
