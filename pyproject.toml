@@ -30,7 +30,7 @@ classifiers = [  #! Update me
 [tool.poetry.dependencies]
 python = "^3.10"
 loguru = "^0.6.0"
-pyqt5 = "^5.15.7"
+pyqt5 = "^5.15.8"
 workflow_manager = { git = "https://github.com/martokk/workflow_manager.git", branch = "main" }
 
 [tool.poetry.group.dev.dependencies]
